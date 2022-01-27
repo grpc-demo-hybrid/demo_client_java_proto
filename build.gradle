@@ -55,9 +55,6 @@ sourceSets {
             srcDir 'build/generated/source/proto/main/java'
             srcDir 'build/generated/source/proto/main/grpc'
         }
-        proto {
-            exclude 'demo_proto/helloworld.proto'
-        }
     }
 }
 
