@@ -1,0 +1,119 @@
+apply plugin: "java"
+apply plugin: "com.google.protobuf"
+apply plugin: 'maven-publish'
+
+group 'demo'
+version '1.0-SNAPSHOT'
+
+sourceCompatibility = 1.8
+
+buildscript {
+    repositories {
+        mavenLocal()
+        maven {
+            url "http://maven.aliyun.com/nexus/content/groups/public/"
+        }
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.google.protobuf:protobuf-gradle-plugin:0.8.10'
+    }
+}
+
+repositories {
+    mavenLocal()
+    maven {
+        url "http://maven.aliyun.com/nexus/content/groups/public/"
+    }
+    mavenCentral()
+//    maven {
+//        url "http://192.168.31.240:8081/repository/maven-public/"
+//        credentials {
+//            username "admin"
+//            password "admin123"
+//        }
+//    }
+
+//    maven {
+//        url "https://plugins.gradle.org/m2/"
+//    }
+}
+
+dependencies {
+    compile "org.springframework.boot:spring-boot-starter:2.0.2.RELEASE"
+    compile "io.grpc:grpc-netty:1.15.1"
+    compile "io.grpc:grpc-protobuf:1.15.1"
+    compile "io.grpc:grpc-stub:1.15.1"
+//    compile "org.springframework.boot:spring-boot-starter-web:2.0.2.RELEASE"
+
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir 'build/generated/source/proto/main/java'
+            srcDir 'build/generated/source/proto/main/grpc'
+        }
+        proto {
+            exclude 'demo_proto/helloworld.proto'
+        }
+    }
+}
+
+jar {
+    enabled = true
+    exclude("*.proto")
+}
+
+protobuf {
+    protoc {
+        // The artifact spec for the Protobuf Compiler
+        artifact = 'com.google.protobuf:protoc:3.0.0'
+    }
+    plugins {
+        // Optional: an artifact spec for a protoc plugin, with "grpc" as
+        // the identifier, which can be referred to in the "plugins"
+        // container of the "generateProtoTasks" closure.
+        grpc {
+            artifact = 'io.grpc:protoc-gen-grpc-java:1.0.0-pre2'
+        }
+    }
+    generateProtoTasks {
+        ofSourceSet('main')*.plugins {
+            // Apply the "grpc" plugin whose spec is defined above, without
+            // options.  Note the braces cannot be omitted, otherwise the
+            // plugin will not be added. This is because of the implicit way
+            // NamedDomainObjectContainer binds the methods.
+            grpc { }
+        }
+    }
+}
+
+task sourceJar(type: Jar) {
+    from sourceSets.main.allJava
+}
+
+publishing {
+    repositories {
+        maven {
+            if(project.version.endsWith('-SNAPSHOT')) {
+                url "http://192.168.31.240:8081/repository/maven-snapshots/"
+            }else {
+                url "http://192.168.31.240:8081/repository/maven-releases/"
+            }
+            credentials {
+                username "admin"
+                password "admin123"
+            }
+        }
+    }
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+            artifact sourceJar {
+                classifier "sources"
+            }
+        }
+    }
+}
